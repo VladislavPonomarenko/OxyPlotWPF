@@ -25,12 +25,15 @@
         <StackPanel Grid.Row="1" Grid.Column="1" Margin="0 10">
             <WrapPanel Margin="0 10">
                 <Label Content="Frequency:"/>
-                <TextBox x:Name="Frequency" Width="100"/>
+                <TextBox x:Name="Frequency" Width="100" 
+                         PreviewTextInput="NumberValidationTextBox" TextChanged="TextBox_TextChanged"/>
             </WrapPanel>
             <WrapPanel>
                 <Label Content="Amplitude:"/>
                 <TextBox x:Name="Amplitude" Width="100"/>
             </WrapPanel>
+            <TextBlock x:Name="InvalidData" Foreground="Red" TextWrapping="Wrap"
+                       Visibility="{Binding VisibilityInvalidData}"/>
         </StackPanel>
         
         <oxy:PlotView Grid.RowSpan="3" Grid.Column="2" Model="{Binding MultiplePlot}"/>
@@ -49,9 +52,15 @@
                         Background="Red" Foreground="White"/>
             </WrapPanel>
 
-            <Button x:Name="AddNewSeriesToDiagram" Content="Add new series" 
-                    Margin="10 0" Height="30" Width="100"
-                    HorizontalAlignment="Right"/>
+            <WrapPanel HorizontalAlignment="Right">   
+                <Button x:Name="AddNewSeriesToDiagram" Content="Add new series" 
+                        Margin="10 0" Height="30" Width="120"
+                        Background="LawnGreen"/>
+            
+                <Button x:Name="RemoveLastSeriesFromDiagram" Content="Remove last series " 
+                        Margin="10 0" Height="30" Width="130"
+                        Background="OrangeRed"/>
+            </WrapPanel>
         </DockPanel>
     </Grid>
 </Window>
