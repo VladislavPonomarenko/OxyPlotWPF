@@ -1,6 +1,7 @@
 ﻿using Caliburn.Micro;
 using OxyPlot;
 using OxyPlot.Series;
+using OxyPlotWPF.Helpers;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,7 +9,6 @@ using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Input;
 
 namespace OxyPlotWPF.Screens.MainWindow
 {
@@ -17,11 +17,8 @@ namespace OxyPlotWPF.Screens.MainWindow
         private const byte MeanStep = 15;
         private const byte MaxSeriesCount = 20;
 
-
-        private OxyColor[] DefaultColors = { OxyColor.FromRgb(139, 0, 0), OxyColor.FromRgb(255, 160, 122) };
         private short _lastMeanValue = 5;
         private readonly List<LineSeries> _waves;
-        private List<double[]> _generatedSinusoidals;
 
         private static CancellationTokenSource _cancellationTokenSource = new();
 
@@ -44,19 +41,7 @@ namespace OxyPlotWPF.Screens.MainWindow
         public double Frequency
         {
             get => _frequency;
-            set
-            {
-                //add regex "^-?\\d*(\\.\\d+)?$"
-
-                var regex = "^-?\\d*(\\.\\d+)?$";
-                var match = Regex.Match(value.ToString(), regex, RegexOptions.IgnoreCase);
-
-                if (match.Success)
-                {
-                    Set(ref _frequency, value);
-                }
-
-            }
+            set => Set(ref _frequency, value);
         }
 
         private double _amplitude = 5;
@@ -77,24 +62,16 @@ namespace OxyPlotWPF.Screens.MainWindow
         public MainWindowViewModel()
         {
             _waves = new();
-            _generatedSinusoidals = new();
 
             MultiplePlot = new PlotModel();
 
-            Random random = new();
-
             for (int i = 0; i < 15; i++)
             {
-                byte red = (byte)random.Next(0, 240);
-                byte green = (byte)random.Next(0, 240);
-                byte blue = (byte)random.Next(0, 255);
-
-                var color = OxyColor.FromRgb(red, green, blue);
-
-                LineSeries lineSeries = new() { Color = color };
+                LineSeries lineSeries = new() { Color = LineSeriesHelper.GenerateColor() };
                 _waves.Add(lineSeries);
                 MultiplePlot.Series.Add(lineSeries);
             }
+
             FillUpWaves();
         }
 
@@ -162,13 +139,7 @@ namespace OxyPlotWPF.Screens.MainWindow
                 return;
             }
 
-            Random random = new();
-
-            byte red = (byte)random.Next(0, 240);
-            byte green = (byte)random.Next(0, 240);
-            byte blue = (byte)random.Next(0, 255);
-
-            LineSeries lineSeries = new() { Color = OxyColor.FromRgb(red, green, blue) };
+            LineSeries lineSeries = new() { Color = LineSeriesHelper.GenerateColor() };
             _waves.Add(lineSeries);
             MultiplePlot.Series.Add(lineSeries);
 
