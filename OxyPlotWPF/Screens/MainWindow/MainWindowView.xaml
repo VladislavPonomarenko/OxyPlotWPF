@@ -22,17 +22,22 @@
             <ColumnDefinition Width="20"/>
         </Grid.ColumnDefinitions>
 
-        <StackPanel Grid.Row="1" Grid.Column="1" Margin="0 10">
+        <StackPanel Grid.RowSpan="2" Grid.Column="1" Margin="0 10">
             <WrapPanel Margin="0 10">
                 <Label Content="Frequency:"/>
                 <TextBox x:Name="Frequency" Width="100" 
-                         PreviewTextInput="NumberValidationTextBox" TextChanged="TextBox_TextChanged"/>
+                         TextChanged="TextBox_TextChanged"
+                         PreviewTextInput="NumberValidationTextBox"/>
             </WrapPanel>
             <WrapPanel>
                 <Label Content="Amplitude:"/>
-                <TextBox x:Name="Amplitude" Width="100"/>
+                <TextBox x:Name="Amplitude" Width="100"
+                         TextChanged="TextBox_TextChanged"
+                         PreviewTextInput="NumberValidationTextBox"/>
             </WrapPanel>
-            <TextBlock x:Name="InvalidData" Foreground="Red" TextWrapping="Wrap"
+            
+            <TextBlock x:Name="InvalidData" Foreground="Red" 
+                       TextWrapping="Wrap" Margin="0 50"
                        Visibility="{Binding VisibilityInvalidData}"/>
         </StackPanel>
         

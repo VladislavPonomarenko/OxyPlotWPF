@@ -4,8 +4,8 @@ using OxyPlot.Series;
 using OxyPlotWPF.Helpers;
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Linq;
-using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
@@ -14,20 +14,30 @@ namespace OxyPlotWPF.Screens.MainWindow
 {
     public class MainWindowViewModel : Screen
     {
+        #region Consts
+
         private const byte MeanStep = 15;
         private const byte MaxSeriesCount = 20;
+
+        #endregion
+
+        #region Members
 
         private short _lastMeanValue = 5;
         private readonly List<LineSeries> _waves;
 
         private static CancellationTokenSource _cancellationTokenSource = new();
 
+        #endregion
+
+        #region Properties
+
         private string _invalidData;
         public string InvalidData
         {
             get => _invalidData;
             set => Set(ref _invalidData, value);
-        } 
+        }
 
         protected Visibility _visibilityInvalidData = Visibility.Hidden;
         public Visibility VisibilityInvalidData
@@ -57,6 +67,8 @@ namespace OxyPlotWPF.Screens.MainWindow
 
         public PlotModel MultiplePlot { get; set; }
 
+        #endregion
+
         #region Constructors
 
         public MainWindowViewModel()
@@ -72,45 +84,38 @@ namespace OxyPlotWPF.Screens.MainWindow
                 MultiplePlot.Series.Add(lineSeries);
             }
 
-            FillUpWaves();
+            FillUpWavesByDefault();
         }
 
         #endregion
 
         #region General functions
 
-        public void RunDiagramOneTime()
+        public async void RunDiagramOneTime()
         {
-            _cancellationTokenSource = new CancellationTokenSource();
-            CancellationToken token = _cancellationTokenSource.Token;
-
-            int count = 5;
-
-            foreach (var line in _waves)
+            try
             {
-                UpdateWavesValues(line, count, token).ConfigureAwait(false);
-                count += 15;
+                CancellationToken token = RestartThread();
+
+                FillUpWaves(token).ConfigureAwait(false);
+
+            }catch(Exception ex)
+            {
+                throw;
             }
         }
 
         public async void RunDiagramInLoop()
         {
-            _cancellationTokenSource = new CancellationTokenSource();
-            CancellationToken token = _cancellationTokenSource.Token;
+            CancellationToken token = RestartThread();
 
             try
             {
                 while (!token.IsCancellationRequested)
                 {
-                    int count = 5;
+                    FillUpWaves(token).ConfigureAwait(false);
 
-                    foreach (var line in _waves)
-                    {
-                        UpdateWavesValues(line, count, token).ConfigureAwait(false);
-                        count += 15;
-                    }
-
-                     await Task.Delay(4000).ConfigureAwait(false);
+                    await Task.Delay(4000).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
@@ -121,7 +126,7 @@ namespace OxyPlotWPF.Screens.MainWindow
 
         public void StopDiagram()
         {
-            _cancellationTokenSource.Cancel();
+            _cancellationTokenSource?.Cancel();
         }
 
         public async void AddNewSeriesToDiagram()
@@ -173,7 +178,7 @@ namespace OxyPlotWPF.Screens.MainWindow
 
         #region Internal functions
 
-        private void FillUpWaves()
+        private void FillUpWavesByDefault()
         {
             foreach (var wave in _waves)
             {
@@ -193,25 +198,46 @@ namespace OxyPlotWPF.Screens.MainWindow
             MultiplePlot.InvalidatePlot(true);
         }
 
-        private async Task UpdateWavesValues(LineSeries lineSeries, int countValue, CancellationToken token)
+        private async Task FillUpWaves(CancellationToken token)
+        {
+            short lastMeanValue = 5;
+
+            foreach (var line in _waves)
+            {
+                UpdateWavesValues(line, lastMeanValue, token).ConfigureAwait(false);
+                lastMeanValue += MeanStep;
+            }
+        }
+
+        private async Task UpdateWavesValues(LineSeries lineSeries, short lastMeanValue, CancellationToken token)
         {
             int sampleRate = 1000;
 
-            for (int n = 0; n < 200; n++)
+            for (short index = 0; index < 200; index++)
             {
                 if (token.IsCancellationRequested)
                 {
                     break;
                 }
 
-                lineSeries.Points[n] = DataPoint.Undefined;
-                lineSeries.Points[n + 1] = DataPoint.Undefined;
+                lineSeries.Points[index] = DataPoint.Undefined;
+                lineSeries.Points[index + 1] = DataPoint.Undefined;
                 await Task.Delay(1, token).ConfigureAwait(false);
 
-                var t = (double)(Amplitude * Math.Sin((2 * Math.PI * n * Frequency) / sampleRate));
-                lineSeries.Points[n] = new DataPoint(n, t + countValue);
+                var sinResult = (double)(Amplitude * Math.Sin((2 * Math.PI * index * Frequency) / sampleRate));
+                lineSeries.Points[index] = new DataPoint(index, sinResult + lastMeanValue);
+                
                 MultiplePlot.InvalidatePlot(true);
             }
+        }
+
+        private CancellationToken RestartThread()
+        {
+            _cancellationTokenSource?.Cancel();
+
+            _cancellationTokenSource = new CancellationTokenSource();
+
+            return _cancellationTokenSource.Token;
         }
 
         #endregion
