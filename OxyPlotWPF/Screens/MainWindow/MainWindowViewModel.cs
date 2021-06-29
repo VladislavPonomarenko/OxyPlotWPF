@@ -91,13 +91,13 @@ namespace OxyPlotWPF.Screens.MainWindow
 
         #region General functions
 
-        public async void RunDiagramOneTime()
+        public async void RunDiagramOneTimeAsync()
         {
             try
             {
                 CancellationToken token = RestartThread();
 
-                FillUpWaves(token).ConfigureAwait(false);
+                FillUpWavesAsync(token).ConfigureAwait(false);
 
             }catch(Exception ex)
             {
@@ -105,7 +105,7 @@ namespace OxyPlotWPF.Screens.MainWindow
             }
         }
 
-        public async void RunDiagramInLoop()
+        public async void RunDiagramInLoopAsync()
         {
             CancellationToken token = RestartThread();
 
@@ -113,7 +113,7 @@ namespace OxyPlotWPF.Screens.MainWindow
             {
                 while (!token.IsCancellationRequested)
                 {
-                    FillUpWaves(token).ConfigureAwait(false);
+                    FillUpWavesAsync(token).ConfigureAwait(false);
 
                     await Task.Delay(4000).ConfigureAwait(false);
                 }
@@ -129,7 +129,7 @@ namespace OxyPlotWPF.Screens.MainWindow
             _cancellationTokenSource?.Cancel();
         }
 
-        public async void AddNewSeriesToDiagram()
+        public async void AddNewSeriesToDiagramAsync()
         {
             if (_waves.Count == MaxSeriesCount)
             {
@@ -151,7 +151,7 @@ namespace OxyPlotWPF.Screens.MainWindow
             SetDefaultValesForWave(lineSeries);
         } 
         
-        public async void RemoveLastSeriesFromDiagram()
+        public async void RemoveLastSeriesFromDiagramAsync()
         {
             if (_waves.Count == 1)
             {
@@ -198,18 +198,18 @@ namespace OxyPlotWPF.Screens.MainWindow
             MultiplePlot.InvalidatePlot(true);
         }
 
-        private async Task FillUpWaves(CancellationToken token)
+        private async Task FillUpWavesAsync(CancellationToken token)
         {
             short lastMeanValue = 5;
 
             foreach (var line in _waves)
             {
-                UpdateWavesValues(line, lastMeanValue, token).ConfigureAwait(false);
+                UpdateWavesValuesAsync(line, lastMeanValue, token).ConfigureAwait(false);
                 lastMeanValue += MeanStep;
             }
         }
 
-        private async Task UpdateWavesValues(LineSeries lineSeries, short lastMeanValue, CancellationToken token)
+        private async Task UpdateWavesValuesAsync(LineSeries lineSeries, short lastMeanValue, CancellationToken token)
         {
             int sampleRate = 1000;
 
