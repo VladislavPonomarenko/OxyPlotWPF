@@ -113,9 +113,21 @@ namespace OxyPlotWPF.Screens.MainWindow
             {
                 while (!token.IsCancellationRequested)
                 {
-                    FillUpWavesAsync(token).ConfigureAwait(false);
+                    await Task.Run(() => { 
 
-                    await Task.Delay(4000).ConfigureAwait(false);
+                    short lastMeanValue = 5;
+
+                    foreach (var line in _waves)
+                    {
+                        UpdateWavesValuesAsync(line, lastMeanValue, token);
+
+                        lastMeanValue += MeanStep;
+                    }
+                    });
+
+                    Debug.WriteLine("End await");
+
+                   // await Task.Delay(1000).ConfigureAwait(false);
                 }
             }
             catch (Exception ex)
@@ -177,7 +189,7 @@ namespace OxyPlotWPF.Screens.MainWindow
         #endregion
 
         #region Internal functions
-
+        static object locker = new object();
         private void FillUpWavesByDefault()
         {
             foreach (var wave in _waves)
@@ -198,15 +210,21 @@ namespace OxyPlotWPF.Screens.MainWindow
             MultiplePlot.InvalidatePlot(true);
         }
 
-        private async Task FillUpWavesAsync(CancellationToken token)
+        private async Task<bool> FillUpWavesAsync(CancellationToken token)
         {
             short lastMeanValue = 5;
 
-            foreach (var line in _waves)
+            lock (locker)
             {
-                UpdateWavesValuesAsync(line, lastMeanValue, token).ConfigureAwait(false);
-                lastMeanValue += MeanStep;
+                foreach (var line in _waves)
+                {
+                    var task = UpdateWavesValuesAsync(line, lastMeanValue, token).ConfigureAwait(false);
+
+                    lastMeanValue += MeanStep;
+                }
             }
+
+            return true;
         }
 
         private async Task UpdateWavesValuesAsync(LineSeries lineSeries, short lastMeanValue, CancellationToken token)
@@ -226,8 +244,11 @@ namespace OxyPlotWPF.Screens.MainWindow
 
                 var sinResult = (double)(Amplitude * Math.Sin((2 * Math.PI * index * Frequency) / sampleRate));
                 lineSeries.Points[index] = new DataPoint(index, sinResult + lastMeanValue);
-                
+
+                //App.Current.Dispatcher.Invoke(() => { });
+               // App.Current.Dispatcher.Invoke(() => {
                 MultiplePlot.InvalidatePlot(true);
+               // });
             }
         }
 
