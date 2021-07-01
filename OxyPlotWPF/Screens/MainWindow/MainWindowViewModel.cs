@@ -25,7 +25,7 @@ namespace OxyPlotWPF.Screens.MainWindow
 
         private short _lastMeanValue = 5;
         private readonly List<LineSeries> _waves;
-
+        private short _sampleRate = 1000;
         private static CancellationTokenSource _cancellationTokenSource = new();
 
         #endregion
@@ -97,9 +97,12 @@ namespace OxyPlotWPF.Screens.MainWindow
             {
                 CancellationToken token = RestartThread();
 
-                FillUpWavesAsync(token).ConfigureAwait(false);
-
-            }catch(Exception ex)
+                await Task.Run(() =>
+                {
+                    UpdateWavesValuesAsync(token).Wait();
+                });
+            }
+            catch (Exception ex)
             {
                 throw;
             }
@@ -113,21 +116,10 @@ namespace OxyPlotWPF.Screens.MainWindow
             {
                 while (!token.IsCancellationRequested)
                 {
-                    await Task.Run(() => { 
-
-                    short lastMeanValue = 5;
-
-                    foreach (var line in _waves)
-                    {
-                        UpdateWavesValuesAsync(line, lastMeanValue, token);
-
-                        lastMeanValue += MeanStep;
-                    }
-                    });
-
-                    Debug.WriteLine("End await");
-
-                   // await Task.Delay(1000).ConfigureAwait(false);
+                   await Task.Run(() => 
+                   {
+                        UpdateWavesValuesAsync(token).Wait();
+                   });
                 }
             }
             catch (Exception ex)
@@ -189,7 +181,7 @@ namespace OxyPlotWPF.Screens.MainWindow
         #endregion
 
         #region Internal functions
-        static object locker = new object();
+       
         private void FillUpWavesByDefault()
         {
             foreach (var wave in _waves)
@@ -210,45 +202,32 @@ namespace OxyPlotWPF.Screens.MainWindow
             MultiplePlot.InvalidatePlot(true);
         }
 
-        private async Task<bool> FillUpWavesAsync(CancellationToken token)
+        private async Task UpdateWavesValuesAsync(CancellationToken token)
         {
-            short lastMeanValue = 5;
-
-            lock (locker)
+            
+                for (short index = 0; index < 200; index++) 
             {
-                foreach (var line in _waves)
+                short lastMeanValue = 5;
+
+                foreach (var lineSeries in _waves)
                 {
-                    var task = UpdateWavesValuesAsync(line, lastMeanValue, token).ConfigureAwait(false);
+                    if (token.IsCancellationRequested)
+                    {
+                        break;
+                    }
+
+                    lineSeries.Points[index] = DataPoint.Undefined;
+                    if(index != 199)
+                        lineSeries.Points[index + 1] = DataPoint.Undefined;
+                    
+                    var sinResult = (double)(Amplitude * Math.Sin((2 * Math.PI * index * Frequency) / _sampleRate));
+                    lineSeries.Points[index] = new DataPoint(index, sinResult + lastMeanValue);
+
+                    MultiplePlot.InvalidatePlot(true);
 
                     lastMeanValue += MeanStep;
                 }
-            }
-
-            return true;
-        }
-
-        private async Task UpdateWavesValuesAsync(LineSeries lineSeries, short lastMeanValue, CancellationToken token)
-        {
-            int sampleRate = 1000;
-
-            for (short index = 0; index < 200; index++)
-            {
-                if (token.IsCancellationRequested)
-                {
-                    break;
-                }
-
-                lineSeries.Points[index] = DataPoint.Undefined;
-                lineSeries.Points[index + 1] = DataPoint.Undefined;
-                await Task.Delay(1, token).ConfigureAwait(false);
-
-                var sinResult = (double)(Amplitude * Math.Sin((2 * Math.PI * index * Frequency) / sampleRate));
-                lineSeries.Points[index] = new DataPoint(index, sinResult + lastMeanValue);
-
-                //App.Current.Dispatcher.Invoke(() => { });
-               // App.Current.Dispatcher.Invoke(() => {
-                MultiplePlot.InvalidatePlot(true);
-               // });
+                await Task.Delay(1);
             }
         }
 
