@@ -4,7 +4,6 @@ using OxyPlot.Series;
 using OxyPlotWPF.Helpers;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -116,10 +115,10 @@ namespace OxyPlotWPF.Screens.MainWindow
             {
                 while (!token.IsCancellationRequested)
                 {
-                   await Task.Run(() => 
-                   {
+                    await Task.Run(() =>
+                    {
                         UpdateWavesValuesAsync(token).Wait();
-                   });
+                    });
                 }
             }
             catch (Exception ex)
@@ -153,8 +152,8 @@ namespace OxyPlotWPF.Screens.MainWindow
             MultiplePlot.Series.Add(lineSeries);
 
             SetDefaultValesForWave(lineSeries);
-        } 
-        
+        }
+
         public async void RemoveLastSeriesFromDiagramAsync()
         {
             if (_waves.Count == 1)
@@ -181,7 +180,7 @@ namespace OxyPlotWPF.Screens.MainWindow
         #endregion
 
         #region Internal functions
-       
+
         private void FillUpWavesByDefault()
         {
             foreach (var wave in _waves)
@@ -204,12 +203,12 @@ namespace OxyPlotWPF.Screens.MainWindow
 
         private async Task UpdateWavesValuesAsync(CancellationToken token)
         {
-            
-                for (short index = 0; index < 200; index++) 
+
+            for (short index = 0; index < 200; index++)
             {
                 short lastMeanValue = 5;
 
-                foreach (var lineSeries in _waves)
+                foreach (var lineSeries in _waves.ToList())
                 {
                     if (token.IsCancellationRequested)
                     {
@@ -217,9 +216,9 @@ namespace OxyPlotWPF.Screens.MainWindow
                     }
 
                     lineSeries.Points[index] = DataPoint.Undefined;
-                    if(index != 199)
+                    if (index != 199)
                         lineSeries.Points[index + 1] = DataPoint.Undefined;
-                    
+
                     var sinResult = (double)(Amplitude * Math.Sin((2 * Math.PI * index * Frequency) / _sampleRate));
                     lineSeries.Points[index] = new DataPoint(index, sinResult + lastMeanValue);
 
